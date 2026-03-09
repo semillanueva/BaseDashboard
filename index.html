@@ -772,7 +772,15 @@ async function loadAll() {
   try {
     const promises = [];
     if (cfg.urlBase) promises.push(fetchCSV(cfg.urlBase, true).then(d => { BASE_DATA = d; }));
-    if (cfg.urlKobo) promises.push(fetchCSV(cfg.urlKobo, false).then(d => { KOBO_DATA = d; }));
+    if (cfg.urlKobo) promises.push(fetchCSV(cfg.urlKobo, false).then(d => {
+      KOBO_DATA = d;
+      console.log('[KOBO DEBUG] Total rows:', d.length);
+      if (d.length > 0) {
+        console.log('[KOBO DEBUG] Keys en fila 1:', Object.keys(d[0]));
+        console.log('[KOBO DEBUG] Vivero_Estudio fila 1:', JSON.stringify(d[0]['Vivero_Estudio']));
+        console.log('[KOBO DEBUG] Primeros 5 Vivero_Estudio:', d.slice(0,5).map(r=>r['Vivero_Estudio']));
+      }
+    }));
     if (promises.length === 0) { await loadEmbedded(); return; }
     await Promise.all(promises);
     finishLoad(true);
