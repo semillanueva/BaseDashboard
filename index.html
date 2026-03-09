@@ -710,10 +710,17 @@ function parseCSV(text) {
   const headers = parseCSVRow(lines[0]);
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const vals = parseCSVRow(lines[i]);
+    const line = lines[i];
+    // Ignorar lineas vacias o solo comas (filas fantasma de Google Sheets)
+    if (!line.trim()) continue;
+    if (line.replace(/,/g,'').trim() === '') continue;
+    const vals = parseCSVRow(line);
+    // Ignorar si todos los valores estan vacios
+    if (vals.every(v => !v || !v.trim())) continue;
     const obj = {};
     headers.forEach((h,idx) => obj[h] = (vals[idx] || '').trim());
+    // Ignorar filas sin datos clave (padding de Google Sheets)
+    if (!obj['EXPERIMENTO'] && !obj['PLOT_CODE'] && !obj['DESIGNATION']) continue;
     rows.push(obj);
   }
   return rows;
@@ -806,8 +813,10 @@ function finishLoad(fromRemote) {
   buildAllSections();
   setStatus(fromRemote ? 'online' : 'local');
   const now = new Date();
+  const _plots   = BASE_DATA.filter(r => !r.PLANT_NO || r.PLANT_NO.trim() === '').length;
+  const _plantas = BASE_DATA.filter(r =>  r.PLANT_NO && r.PLANT_NO.trim() !== '').length;
   document.getElementById('headerSub').textContent =
-    `${BASE_DATA.length.toLocaleString()} registros BASE · ${KOBO_DATA.length.toLocaleString()} Kobo · Actualizado ${now.toLocaleTimeString()}`;
+    `${BASE_DATA.length.toLocaleString()} registros BASE (${_plots.toLocaleString()} plots · ${_plantas.toLocaleString()} plantas) · ${KOBO_DATA.length.toLocaleString()} Kobo · Actualizado ${now.toLocaleTimeString()}`;
   showPage(currentPage || 'overview', document.querySelector('.nav-item'));
 }
 
@@ -913,14 +922,19 @@ function buildOverview() {
   const withScore = data.filter(r=>r.SCORE_P && r.SCORE_P!=='').length;
   const bcStages = data.filter(r=>r.BC_stage).length;
 
+  // Separar plots vs plantas por PLANT_NO
+  const regPlots   = data.filter(r => !r.PLANT_NO || r.PLANT_NO.trim() === '');
+  const regPlantas = data.filter(r =>  r.PLANT_NO && r.PLANT_NO.trim() !== '');
+
   const kpis = [
-    { val: data.length.toLocaleString(), label: 'Total registros', sub: 'plots', color: '#388bfd' },
-    { val: studies.length, label: 'Estudios/Viveros', sub: 'experimentos', color: '#3fb950' },
-    { val: designations.length.toLocaleString(), label: 'Designaciones únicas', sub: 'germoplasma', color: '#d2a8ff' },
-    { val: withDFF.toLocaleString(), label: 'Con DFF registrado', sub: 'días flor masc.', color: '#e3b341' },
-    { val: withScore.toLocaleString(), label: 'Con SCORE_P', sub: 'planta evaluada', color: '#ff7b72' },
-    { val: bcStages, label: 'Con BC_stage', sub: 'estadio consignado', color: '#56d364' },
-    { val: KOBO_DATA.length, label: 'Registros Kobo', sub: 'ambiente/manejo', color: '#79c0ff' },
+    { val: regPlots.length.toLocaleString(),   label: 'Registros Plot',   sub: 'nivel parcela',    color: '#388bfd' },
+    { val: regPlantas.length.toLocaleString(), label: 'Registros Planta', sub: 'nivel planta',     color: '#bc8cff' },
+    { val: studies.length,                     label: 'Estudios/Viveros', sub: 'experimentos',     color: '#3fb950' },
+    { val: designations.length.toLocaleString(),label: 'Designaciones únicas', sub: 'germoplasma', color: '#d2a8ff' },
+    { val: withDFF.toLocaleString(),           label: 'Con DFF registrado', sub: 'días flor masc.', color: '#e3b341' },
+    { val: withScore.toLocaleString(),         label: 'Con SCORE_P',      sub: 'planta evaluada',  color: '#ff7b72' },
+    { val: bcStages,                           label: 'Con BC_stage',     sub: 'estadio consignado',color: '#56d364' },
+    { val: KOBO_DATA.length,                   label: 'Registros Kobo',   sub: 'ambiente/manejo',  color: '#79c0ff' },
     { val: [...new Set(data.map(r=>r.LOCATION_NAME).filter(Boolean))].length, label: 'Ubicaciones', sub: 'sitios de campo', color: '#e3b341' },
   ];
 
