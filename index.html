@@ -708,7 +708,8 @@ function dismissBanner() {
 // ===================================================================
 function parseCSV(text, strict = false) {
   const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
-  const headers = parseCSVRow(lines[0]);
+  // Limpiar \r residual de cada header (encoding Windows)
+  const headers = parseCSVRow(lines[0]).map(h => h.replace(/\r/g,'').trim());
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
@@ -719,7 +720,7 @@ function parseCSV(text, strict = false) {
     // Ignorar si todos los valores estan vacios
     if (vals.every(v => !v || !v.trim())) continue;
     const obj = {};
-    headers.forEach((h,idx) => obj[h] = (vals[idx] || '').trim());
+    headers.forEach((h,idx) => obj[h] = (vals[idx] || '').replace(/\r/g,'').trim());
     // Solo para BASE: ignorar filas sin datos clave (padding de Google Sheets)
     if (strict && !obj['EXPERIMENTO'] && !obj['PLOT_CODE'] && !obj['DESIGNATION']) continue;
     rows.push(obj);
