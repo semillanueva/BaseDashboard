@@ -380,7 +380,7 @@
           <div class="section-letter" style="background:rgba(56,139,253,.2);color:#79c0ff">A</div>
           <div>
             <div class="section-title">Germoplasma</div>
-            <div class="section-desc">RecParent · DonnorParent · BC_stage · MostAdvanceStage · TraitStream</div>
+            <div class="section-desc">RecParent · DonnorParent · BC_stage · MostAdvanceStage · Prot · Lys · Zn_avg · Fe_avg · Trp</div>
           </div>
         </div>
         <div class="tabs" id="tabsA"></div>
@@ -940,10 +940,20 @@ function applyFilters() {
     return true;
   });
 
-  // Filtrar Kobo automáticamente según el estudio seleccionado en BASE
+  // Filtrar Kobo via relación: Vivero_Estudio → EXPERIMENTO → LOCATION_NAME
   if (est) {
+    // Filtro directo por estudio
     const estNorm = normalizeStudy(est);
     filteredKobo = KOBO_DATA.filter(r => normalizeStudy(r.Vivero_Estudio || '') === estNorm);
+  } else if (loc) {
+    // Filtro por ubicación: obtener estudios de esa ubicación en BASE, luego cruzar con Kobo
+    const estudiosEnLoc = new Set(
+      BASE_DATA
+        .filter(r => r.LOCATION_NAME === loc)
+        .map(r => normalizeStudy(r.EXPERIMENTO || ''))
+        .filter(Boolean)
+    );
+    filteredKobo = KOBO_DATA.filter(r => estudiosEnLoc.has(normalizeStudy(r.Vivero_Estudio || '')));
   } else {
     filteredKobo = [...KOBO_DATA];
   }
@@ -1158,7 +1168,8 @@ function goPage(tableId, pagId, page) {
 // CATEGORÍAS
 // ===================================================================
 function buildCatA() {
-  const rows = filteredBase.filter(r => r.RecParent || r.DonnorParent || r.BC_stage || r.MostAdvanceStage || r.VCODE);
+  const rows = filteredBase.filter(r => r.RecParent || r.DonnorParent || r.BC_stage || r.MostAdvanceStage || r.VCODE
+    || r.Prot || r.Lys || r.Zn_avg || r.Fe_avg || r.Trp);
   const cols = [
     { key:'EXPERIMENTO',     label:'Estudio',      render:(v)=>`<span class="td-mono" style="font-size:0.68rem">${v||'—'}</span>` },
     { key:'DESIGNATION',     label:'Designación',  render:(v)=>`<span class="td-em">${v||'—'}</span>` },
@@ -1168,6 +1179,11 @@ function buildCatA() {
     { key:'BC_stage',        label:'BC_stage',     render:(v)=>bcBadge(v) },
     { key:'MostAdvanceStage',label:'MostAdvStage', render:(v)=>v?`<span class="badge badge-blue">${v}</span>`:`<span class="empty-val">—</span>` },
     { key:'ENTRY_TYPE',      label:'EntryType',    render:(v)=>entryBadge(v) },
+    { key:'Prot',   label:'Prot %',   render:(v)=>v?`<span class="td-mono" style="color:#79c0ff">${parseFloat(v).toFixed(2)}</span>`:`<span class="empty-val">—</span>` },
+    { key:'Lys',    label:'Lys %',    render:(v)=>v?`<span class="td-mono" style="color:#79c0ff">${parseFloat(v).toFixed(3)}</span>`:`<span class="empty-val">—</span>` },
+    { key:'Zn_avg', label:'Zn avg',   render:(v)=>v?`<span class="td-mono" style="color:#3fb950">${parseFloat(v).toFixed(2)}</span>`:`<span class="empty-val">—</span>` },
+    { key:'Fe_avg', label:'Fe avg',   render:(v)=>v?`<span class="td-mono" style="color:#3fb950">${parseFloat(v).toFixed(2)}</span>`:`<span class="empty-val">—</span>` },
+    { key:'Trp',    label:'Trp %',    render:(v)=>v?`<span class="td-mono" style="color:#79c0ff">${parseFloat(v).toFixed(3)}</span>`:`<span class="empty-val">—</span>` },
   ];
   buildTable('tableA','pagA','tabsA', rows, cols);
   document.getElementById('nb-A').textContent = rows.length.toLocaleString();
