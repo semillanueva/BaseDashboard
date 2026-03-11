@@ -570,19 +570,20 @@ function buildSnapshot(baseData) {
     // Contar plots (PLANT_NO vacío) y plantas (PLANT_NO con valor)
     const plots   = rows.filter(r => !r.PLANT_NO || r.PLANT_NO.trim() === '').length;
     const plantas = rows.filter(r =>  r.PLANT_NO && r.PLANT_NO.trim() !== '').length;
-    // Contar columnas con datos en este estudio
+    // Registrar qué columnas tienen datos en este estudio (nombre exacto)
     const colsConDatos = snap.columnas.filter(col =>
       rows.some(r => r[col] && r[col].trim() !== '')
     );
     snap.porEstudio[est] = {
-      total:       rows.length,
-      plots:       plots,
-      plantas:     plantas,
-      conDFF:      rows.filter(r => r.DFF      && r.DFF      !== '').length,
-      conScore:    rows.filter(r => r.SCORE_P  && r.SCORE_P  !== '').length,
-      conMaz:      rows.filter(r => r.MAZ_COS_auto && r.MAZ_COS_auto !== '').length,
-      conDFM:      rows.filter(r => r.DFM      && r.DFM      !== '').length,
+      total:        rows.length,
+      plots:        plots,
+      plantas:      plantas,
+      conDFF:       rows.filter(r => r.DFF      && r.DFF      !== '').length,
+      conScore:     rows.filter(r => r.SCORE_P  && r.SCORE_P  !== '').length,
+      conMaz:       rows.filter(r => r.MAZ_COS_auto && r.MAZ_COS_auto !== '').length,
+      conDFM:       rows.filter(r => r.DFM      && r.DFM      !== '').length,
       colsConDatos: colsConDatos.length,
+      colsSet:      colsConDatos,  // lista exacta de columnas con datos
     };
   });
   return snap;
@@ -636,6 +637,15 @@ function detectarCambiosDash(baseData) {
         diffs.push({ est, metrica: labels[key], antes: p[key], ahora: a[key], delta: a[key] - p[key] });
       }
     });
+    // Columnas que ganaron datos en este estudio (nuevas con datos vs antes vacías)
+    const colsAntesEst = p.colsSet || [];
+    const colsAhoraEst = a.colsSet || [];
+    const colsNuevasEst = colsAhoraEst.filter(c => !colsAntesEst.includes(c));
+    if (colsNuevasEst.length > 0) {
+      diffs.push({ est, metrica: 'Columnas con datos nuevos', antes: colsAntesEst.length,
+                   ahora: colsAhoraEst.length, delta: colsNuevasEst.length,
+                   colsNuevasEst });
+    }
   });
 
   const estudiosNuevos    = current.estudios.filter(e => !prev.estudios.includes(e));
@@ -738,6 +748,13 @@ function mostrarBanner(cambios) {
           <td style="font-family:var(--font-mono);color:var(--text)">${d.ahora.toLocaleString()}</td>
           <td class="${dc}">${ds2}${d.delta.toLocaleString()}</td>
         </tr>`;
+        // Si tiene columnas específicas, mostrarlas como sub-fila
+        if (d.colsNuevasEst && d.colsNuevasEst.length > 0) {
+          html += `<tr><td colspan="5" style="padding:4px 12px 8px 36px">
+            <div style="display:flex;flex-wrap:wrap;gap:4px">
+              ${d.colsNuevasEst.map(c=>`<span class="badge badge-blue" style="font-family:var(--font-mono);font-size:0.65rem">${c}</span>`).join('')}
+            </div></td></tr>`;
+        }
       });
     });
     tbody.innerHTML = html;
@@ -981,6 +998,13 @@ function showPage(id, el) {
 // ===================================================================
 // HELPERS
 // ===================================================================
+function fmtYMD(v) {
+  if (!v || v === '') return `<span class="empty-val">—</span>`;
+  const s = v.toString().replace(/\D/g,'');
+  if (s.length === 8) return `<span class="td-mono" style="color:var(--accent3)">${s.slice(6,8)}/${s.slice(4,6)}/${s.slice(0,4)}</span>`;
+  return `<span class="td-mono" style="color:var(--accent3)">${v}</span>`;
+}
+
 function v(val, dash='—') {
   if (val === null || val === undefined || val === '') return `<span class="empty-val">${dash}</span>`;
   return val;
@@ -1203,13 +1227,21 @@ function buildCatB() {
     return { ...r, _koboFecha: kobo?.Fecha||'', _koboEtapa: kobo?.Etapa||'' };
   });
   const cols = [
-    { key:'EXPERIMENTO',  label:'Estudio',    render:(v)=>`<span class="td-mono" style="font-size:0.68rem">${v||'—'}</span>` },
-    { key:'DESIGNATION',  label:'Designación',render:(v)=>`<span class="td-em">${v||'—'}</span>` },
-    { key:'LOCATION_NAME',label:'Ubicación',  render:(v)=>v?`<span class="badge badge-blue">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'RoguingDate',  label:'RoguingDate',render:(v)=>v?`<span class="td-mono" style="color:var(--accent3)">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'NIVEL',        label:'Nivel',      render:(v)=>v?`<span class="badge badge-gray">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'_koboFecha',   label:'Fecha Kobo', render:(v)=>v?`<span class="td-mono" style="color:var(--accent3)">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'_koboEtapa',   label:'Etapa Kobo', render:(v)=>v?`<span class="badge badge-yellow">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'EXPERIMENTO',         label:'Estudio',           render:(v)=>`<span class="td-mono" style="font-size:0.68rem">${v||'—'}</span>` },
+    { key:'DESIGNATION',         label:'Designación',       render:(v)=>`<span class="td-em">${v||'—'}</span>` },
+    { key:'LOCATION_NAME',       label:'Ubicación',         render:(v)=>v?`<span class="badge badge-blue">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'NIVEL',               label:'Nivel',             render:(v)=>v?`<span class="badge badge-gray">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'SowingDate',          label:'SowingDate',        render:(v)=>fmtYMD(v) },
+    { key:'SeedTreatment',       label:'SeedTreatment',     render:(v)=>v||`<span class="empty-val">—</span>` },
+    { key:'LeafSampligDate',     label:'LeafSampligDate',   render:(v)=>fmtYMD(v) },
+    { key:'LeafDryingDate',      label:'LeafDryingDate',    render:(v)=>fmtYMD(v) },
+    { key:'LeafDryingSuccess',   label:'LeafDryingSuccess', render:(v)=>v?`<span class="badge ${v==='Sí'||v==='Si'||v==='si'?'badge-green':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'LeafSample_ShippDate',label:'LeafShippDate',     render:(v)=>fmtYMD(v) },
+    { key:'GenotypeResultsDate', label:'GenotypeDate',      render:(v)=>fmtYMD(v) },
+    { key:'RoguingDate',         label:'RoguingDate',       render:(v)=>v?`<span class="td-mono" style="color:var(--accent3)">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'MecWeedCtrl_date',    label:'WeedCtrl Date',     render:(v)=>fmtYMD(v) },
+    { key:'_koboFecha',          label:'Fecha Kobo',        render:(v)=>v?`<span class="td-mono" style="color:var(--accent3)">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'_koboEtapa',          label:'Etapa Kobo',        render:(v)=>v?`<span class="badge badge-yellow">${v}</span>`:`<span class="empty-val">—</span>` },
   ];
   buildTable('tableB','pagB','tabsB', enriched, cols);
   document.getElementById('nb-B').textContent = enriched.length.toLocaleString();
@@ -1229,8 +1261,18 @@ function buildCatC() {
     { key:'NPSEL',             label:'NPSEL',           render:(v)=>mkBar(v, maxNP) },
     { key:'MAZ_COS_auto',      label:'MazCos Auto',     render:(v)=>numOrDash(v) },
     { key:'MAZ_COS_cruzas',    label:'MazCos Cruzas',   render:(v)=>numOrDash(v) },
-    { key:'SCORE_P',  label:'SCORE_P',  render:(v)=>v?`<span class="badge ${parseInt(v)>=7?'badge-green':parseInt(v)>=5?'badge-yellow':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'SCORE_MZ', label:'SCORE_MZ', render:(v)=>v?`<span class="badge ${parseInt(v)>=7?'badge-green':parseInt(v)>=5?'badge-yellow':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'SCORE_P',          label:'SCORE_P',          render:(v)=>v?`<span class="badge ${parseInt(v)>=7?'badge-green':parseInt(v)>=5?'badge-yellow':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'SCORE_MZ',         label:'SCORE_MZ',         render:(v)=>v?`<span class="badge ${parseInt(v)>=7?'badge-green':parseInt(v)>=5?'badge-yellow':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'SeedsPlanted_No',  label:'Seeds Planted',    render:(v)=>numOrDash(v) },
+    { key:'Selected_Psample', label:'Selected Psample', render:(v)=>numOrDash(v) },
+    { key:'Total_Psample',    label:'Total Psample',    render:(v)=>numOrDash(v) },
+    { key:'SplitPlanting',    label:'Split Planting',   render:(v)=>v||`<span class="empty-val">—</span>` },
+    { key:'PlantingDensity_seed_m2', label:'Plant Density', render:(v)=>numOrDash(v) },
+    { key:'SowingDepth_cm',   label:'Sowing Depth cm',  render:(v)=>numOrDash(v) },
+    { key:'PlotArea_m2sn',    label:'Plot Area m²',     render:(v)=>numOrDash(v) },
+    { key:'EntrySourceReg',   label:'Entry Source',     render:(v)=>v||`<span class="empty-val">—</span>` },
+    { key:'IrrigMethod_text', label:'Irrig Method',     render:(v)=>v?`<span class="badge badge-blue">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'LoteHistorial2',   label:'Lote Historial',   render:(v)=>v||`<span class="empty-val">—</span>` },
   ];
   buildTable('tableC','pagC','tabsC', rows, cols);
   document.getElementById('nb-C').textContent = rows.length.toLocaleString();
