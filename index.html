@@ -238,9 +238,67 @@
     .cb-header { padding: 10px 14px; }
     .cb-detail { padding: 0 14px 12px; }
   }
+
+  /* LOGIN */
+  #loginOverlay {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  .login-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 380px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+  }
+  .login-logo { font-size: 2.6rem; }
+  .login-title { font-size: 1.15rem; font-weight: 700; color: var(--text); text-align: center; }
+  .login-sub { font-size: 0.78rem; color: var(--text2); text-align: center; margin-top: -12px; }
+  .login-field {
+    width: 100%; display: flex; flex-direction: column; gap: 6px;
+  }
+  .login-field label { font-size: 0.75rem; font-weight: 600; color: var(--text2); }
+  .login-field input {
+    width: 100%; padding: 10px 14px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: var(--font-mono); font-size: 0.9rem;
+    outline: none; transition: border-color .2s;
+  }
+  .login-field input:focus { border-color: var(--accent2); }
+  .login-btn {
+    width: 100%; padding: 11px; background: var(--accent2); color: white;
+    border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; transition: background .2s;
+  }
+  .login-btn:hover { background: #58a6ff; }
+  .login-btn:disabled { background: var(--border); color: var(--text2); cursor: not-allowed; }
+  .login-error {
+    width: 100%; padding: 9px 14px; background: rgba(248,81,73,0.12);
+    border: 1px solid rgba(248,81,73,0.3); border-radius: 8px;
+    color: var(--accent4); font-size: 0.8rem; text-align: center; display: none;
+  }
+  .login-footer { font-size: 0.7rem; color: var(--text2); text-align: center; }
 </style>
 </head>
 <body>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">🌽</div>
+    <div class="login-title">Breeding Dashboard</div>
+    <div class="login-sub">Semilla Nueva · Acceso restringido</div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input id="loginInput" type="password" placeholder="Ingresa la contraseña" autocomplete="current-password"/>
+    </div>
+    <div class="login-error" id="loginError">Contraseña incorrecta. Intenta de nuevo.</div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Ingresar</button>
+    <div class="login-footer">Semilla Nueva · R&D · 2026</div>
+  </div>
+</div>
+
+<div id="appContent" style="display:none">
 
 <header class="header">
   <div class="header-left">
@@ -1424,73 +1482,73 @@ function init() {
 // Auto-reload desactivado — usar botón manual ↻ Actualizar
 
 window.addEventListener('DOMContentLoaded', init);
-
 </script>
-</div><!--/appContent-->
+
+</div><!-- /appContent -->
+
 <script>
-  // =====================================================
+// =====================================================
 // LOGIN — JSONBin
 // =====================================================
-
-const LOGIN_BIN = '69b41d4cb7ec241ddc6679b3';
-const LOGIN_KEY = '$2a$10$sIxUKUhDKyvNvhdedW2XX.rYODI2GsngOLf.XWGOWlFQEcrQrIRga';
-const LOGIN_BASE =  'https://api.jsonbin.io/v3/b/' + LOGIN_BIN;
+const LOGIN_BIN  = '69b41d4cb7ec241ddc6679b3';
+const LOGIN_KEY  = '$2a$10$sIxUKUhDKyvNvhdedW2XX.rYODI2GsngOLf.XWGOWlFQEcrQrIRga';
+const LOGIN_BASE = 'https://api.jsonbin.io/v3/b/' + LOGIN_BIN;
 const SESSION_KEY = 'dash_auth_2026';
 
-function checkSession(){
+function checkSession() {
   const s = sessionStorage.getItem(SESSION_KEY);
-  if(s === 'ok') showApp();
-
+  if (s === 'ok') showApp();
 }
 
-async function doLogin(){
+async function doLogin() {
   const input = document.getElementById('loginInput');
-  const btn = document.getElementsById('loginBtn');
-  const err = document.getElementById('loginError');
-  const pass = input.value.trim();
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginError');
+  const pass  = input.value.trim();
   if (!pass) return;
 
   btn.disabled = true;
-  btn.textContent = 'Verificando....'
+  btn.textContent = 'Verificando...';
   err.style.display = 'none';
 
-  try{
-    const r = await fetch(LOGIN_BASE + '/latest',{
-      headers: { 'X-Master-Key': LOGIN_KEY}
+  try {
+    const r = await fetch(LOGIN_BASE + '/latest', {
+      headers: { 'X-Master-Key': LOGIN_KEY }
     });
-    if(!r.ok) throw new Error('Sin conexión con el servidor de auth');
+    if (!r.ok) throw new Error('Sin conexión con el servidor de auth.');
     const data = await r.json();
     const stored = data.record?.password || '';
 
-    if (pass === stored){
+    if (pass === stored) {
       sessionStorage.setItem(SESSION_KEY, 'ok');
       showApp();
-      } else {
-        err.style.display = 'block';
-        input.value = '';
-        input.focus();
-      }
-    } catch(e){
-      err.textContent = '⚠️ Error de Conexión. Intenta de nuevo';
+    } else {
       err.style.display = 'block';
+      input.value = '';
+      input.focus();
     }
-    btn.disabled = false;
-    btn.textContent = 'Ingresar';
+  } catch(e) {
+    err.textContent = '⚠️ Error de conexión. Intenta de nuevo.';
+    err.style.display = 'block';
   }
 
-  function showApp(){4
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('appContent').style.display = 'block';
-  }
+  btn.disabled = false;
+  btn.textContent = 'Ingresar';
+}
 
-  // enter key en el input
-  document.getElementById('loginInput').addEventListener('keydown', e =>{
-    if(e.key === 'Enter') doLogin();
-  });
+function showApp() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appContent').style.display   = 'block';
+}
 
-  //verificar sesion activa al cargar
-  checkSession();
+// Enter key en el input
+document.getElementById('loginInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
 
+// Verificar sesión activa al cargar
+checkSession();
 </script>
+
 </body>
 </html>
