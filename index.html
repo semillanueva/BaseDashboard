@@ -1399,10 +1399,12 @@ function buildCatE() {
 }
 
 function buildCatF() {
-  const rCols = ['MAZ_SEL_auto','MAZ_SEL_cruzas','MAZ_COS_auto','MAZ_COS_cruzas','COLOR_GRANO'];
+  const rCols = ['MAZ_SEL_auto','MAZ_SEL_cruzas','MAZ_COS_auto','MAZ_COS_cruzas','COLOR_GRANO',
+                  'CornHarvM', 'ACAME_RAIZsn', 'ACAME_TALLOsn'];
   const rows = filteredBase.filter(r => rCols.some(c=>r[c]&&r[c]!==''));
   const maxAuto = Math.max(...rows.map(r=>parseFloat(r.MAZ_SEL_auto)||0));
   const maxCruz = Math.max(...rows.map(r=>parseFloat(r.MAZ_SEL_cruzas)||0));
+  const maxHarv = Math.max(...rows.map(r=>parseFloat(r.CornHarvM)||0));
   const cols = [
     { key:'EXPERIMENTO',     label:'Estudio',       render:(v)=>`<span class="td-mono" style="font-size:0.68rem">${v||'—'}</span>` },
     { key:'DESIGNATION',     label:'Designación',   render:(v)=>`<span class="td-em">${v||'—'}</span>` },
@@ -1414,6 +1416,9 @@ function buildCatF() {
     { key:'MAZ_SEL_cruzas',  label:'MazSel Cruzas', render:(v)=>mkBar(v,maxCruz) },
     { key:'MAZ_SEL_cruzasBK',label:'MazSel BK',     render:(v)=>numOrDash(v) },
     { key:'MAZ_SEL_cruzasOP',label:'MazSel OP',     render:(v)=>numOrDash(v) },
+    { key:'CornHarvM',       label:'CornHarvM',     render:(v)=>mkBar(v,maxHarv)},
+    { key:'ACAME_RAIZsn',    label:'ACAME_RAIZsn',  render:(v)=>v?`<span class="badge ${parseFloat(v)<=2?'badge-green':parseFloat(v)<=4?'badge-yellow':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>`},
+    { key:'ACAME_TALLOsn',   label:'ACAME_TALLOsn', render:(v)=>v?`<span class="badge ${parseFloat(v)<=2?'badge-green':parseFloat(v)<=4?'badge-yellow':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>`},
   ];
   buildTable('tableF','pagF','tabsF', rows, cols);
   document.getElementById('nb-F').textContent = rows.length.toLocaleString();
