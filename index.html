@@ -1089,6 +1089,19 @@ function entryBadge(t) {
   return `<span class="badge badge-green">${t}</span>`;
 }
 
+function scoreBadge(val){
+  if(!val || val === '') return `<span class="empty-val">—</span>`;
+  const n = parseFloat(val);
+  const cls = isNaN(n) ? 'badge-gray' : n >= 7 ? 'badge-green' : n >= 5 ? 'badge-yellow' : 'badege-red';
+  return `<span class="badge ${cls}">${val}</span>`
+}
+
+function fotoLink(val){
+  if (!val || val === '') return `<span class="empty-val">—</span>`;
+  // si aparece URL la convierte en link, si no lo muestra como texto
+  if (val.startsWith('httpp')) return `<a href="${val}" target="_blank" style="color:var(--accent2);font-size:0.72rem;font-family:var(--font-mono)">🔗 Ver foto</a>`;
+  return `<span class="td-mono" style="font-size:0.7rem">${val}</span>`;
+}
 // ===================================================================
 // SUMMARY OVERVIEW
 // ===================================================================
@@ -1291,6 +1304,7 @@ function buildCatB() {
     { key:'NIVEL',               label:'Nivel',             render:(v)=>v?`<span class="badge badge-gray">${v}</span>`:`<span class="empty-val">—</span>` },
     { key:'SowingDate',          label:'SowingDate',        render:(v)=>fmtYMD(v) },
     { key:'SeedTreatment',       label:'SeedTreatment',     render:(v)=>fmtYMD(v) },
+    { key:'HarvestDate',         label:'HarvestDate',       render:(v)=>fmtYMD(v) },
     { key:'LeafSampligDate',     label:'LeafSampligDate',   render:(v)=>fmtYMD(v) },
     { key:'LeafDryingDate',      label:'LeafDryingDate',    render:(v)=>fmtYMD(v) },
     { key:'LeafDryingSuccess',   label:'LeafDryingSuccess', render:(v)=>fmtYMD(v) },
@@ -1313,14 +1327,15 @@ function buildCatC() {
     { key:'EXPERIMENTO',       label:'Estudio',         render:(v)=>`<span class="td-mono" style="font-size:0.68rem">${v||'—'}</span>` },
     { key:'PLOT_CODE',         label:'Plot',            render:(v)=>`<span class="badge badge-gray">${v||'—'}</span>` },
     { key:'DESIGNATION',       label:'Designación',     render:(v)=>`<span class="td-em">${v||'—'}</span>` },
+    { key:'AdaptationScore',   label:'AdaptationScore', render:(v)=>scoreBadge(v) },
     { key:'PLANTS_VIRUSsn',    label:'VIRUS',           render:(v)=>v?`<span class="badge badge-red">${v}</span>`:`<span class="empty-val">—</span>` },
     { key:'PlantCount_V4V6',   label:'PlantCount V4V6', render:(v)=>mkBar(v, maxPC) },
     { key:'Plantas_FueraDeTipo',label:'FueraDeTipo',    render:(v)=>v?`<span class="badge badge-yellow">${v}</span>`:`<span class="empty-val">—</span>` },
     { key:'NPSEL',             label:'NPSEL',           render:(v)=>mkBar(v, maxNP) },
     { key:'MAZ_COS_auto',      label:'MazCos Auto',     render:(v)=>numOrDash(v) },
     { key:'MAZ_COS_cruzas',    label:'MazCos Cruzas',   render:(v)=>numOrDash(v) },
-    { key:'SCORE_P',          label:'SCORE_P',          render:(v)=>v?`<span class="badge ${parseInt(v)>=7?'badge-green':parseInt(v)>=5?'badge-yellow':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'SCORE_MZ',         label:'SCORE_MZ',         render:(v)=>v?`<span class="badge ${parseInt(v)>=7?'badge-green':parseInt(v)>=5?'badge-yellow':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'SCORE_P',          label:'SCORE_P',          render:(v)=>scoreBadge(v) },
+    { key:'SCORE_MZ',         label:'SCORE_MZ',         render:(v)=>scoreBadge(v) },
     { key:'SeedsPlanted_No',  label:'Seeds Planted',    render:(v)=>numOrDash(v) },
     { key:'Selected_Psample', label:'Selected Psample', render:(v)=>numOrDash(v) },
     { key:'Total_Psample',    label:'Total Psample',    render:(v)=>numOrDash(v) },
@@ -1340,16 +1355,19 @@ function buildCatD() {
   const qCols = ['VCODE','MAZ_PUDsn','COLOR_CORONAsn','CoronaColor_sn','TIPO_GRANO','tamano_grano_sn','tamano_espiga'];
   const rows = filteredBase.filter(r => qCols.some(c => r[c] && r[c] !== ''));
   const cols = [
-    { key:'EXPERIMENTO',    label:'Estudio',       render:(v)=>`<span class="td-mono" style="font-size:0.68rem">${v||'—'}</span>` },
-    { key:'DESIGNATION',    label:'Designación',   render:(v)=>`<span class="td-em">${v||'—'}</span>` },
-    { key:'VCODE',          label:'VCODE',         render:(v)=>v?`<span class="badge badge-purple">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'BC_stage',       label:'BC_stage',      render:(v)=>bcBadge(v) },
-    { key:'COLOR_CORONAsn', label:'Color Corona',  render:(v)=>v?`<span class="badge badge-yellow">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'CoronaColor_sn', label:'CoronaColor',   render:(v)=>v||`<span class="empty-val">—</span>` },
-    { key:'TIPO_GRANO',     label:'Tipo Grano',    render:(v)=>v?`<span class="badge badge-blue">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'tamano_grano_sn',label:'Tamaño Grano',  render:(v)=>v?`<span class="badge badge-green">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'tamano_espiga',  label:'Tamaño Espiga', render:(v)=>v?`<span class="badge badge-green">${v}</span>`:`<span class="empty-val">—</span>` },
-    { key:'MAZ_PUDsn',      label:'MazPUD',        render:(v)=>v||`<span class="empty-val">—</span>` },
+    { key:'EXPERIMENTO',          label:'Estudio',          render:(v)=>`<span class="td-mono" style="font-size:0.68rem">${v||'—'}</span>` },
+    { key:'DESIGNATION',          label:'Designación',      render:(v)=>`<span class="td-em">${v||'—'}</span>` },
+    { key:'VCODE',                label:'VCODE',            render:(v)=>v?`<span class="badge badge-purple">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'BC_stage',             label:'BC_stage',         render:(v)=>bcBadge(v) },
+    { key:'COLOR_CORONAsn',       label:'Color Corona',     render:(v)=>v?`<span class="badge badge-yellow">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'CoronaColor_sn',       label:'CoronaColor',      render:(v)=>v||`<span class="empty-val">—</span>` },
+    { key:'CoronaColor_sn_ind',   label:'CoronaColo_ind',   render:(v)=>v||`<span class="empty-val">—</span>` },
+    { key:'TIPO_GRANO',           label:'Tipo Grano',       render:(v)=>v?`<span class="badge badge-blue">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'tamano_grano_sn',      label:'Tamaño Grano',     render:(v)=>v?`<span class="badge badge-green">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'tamano_grano_in',      label:'Tamaño Grano ind', render:(v)=>v?`<span class="badge badge-green">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'tamano_espiga',        label:'Tamaño Espiga',    render:(v)=>v?`<span class="badge badge-green">${v}</span>`:`<span class="empty-val">—</span>` },
+    { key:'MAZ_PUDsn',            label:'MazPUD',           render:(v)=>v||`<span class="empty-val">—</span>` },
+    { key:'MAZ_PUD_SCALEsn',      label:'MazPUD Scale',     render:(v)=>v?`<span class="badge badge-gray">${v}</span>`:`<span class="empty-val">—</span>` },
   ];
   buildTable('tableD','pagD','tabsD', rows, cols);
   document.getElementById('nb-D').textContent = rows.length.toLocaleString();
@@ -1405,6 +1423,7 @@ function buildCatF() {
   const maxAuto = Math.max(...rows.map(r=>parseFloat(r.MAZ_SEL_auto)||0));
   const maxCruz = Math.max(...rows.map(r=>parseFloat(r.MAZ_SEL_cruzas)||0));
   const maxHarv = Math.max(...rows.map(r=>parseFloat(r.CornHarvM)||0));
+  const maxMoist= Math.max(...rows.map(r=>parseFloat(r.CornHarvMoisture)||0));
   const cols = [
     { key:'EXPERIMENTO',     label:'Estudio',       render:(v)=>`<span class="td-mono" style="font-size:0.68rem">${v||'—'}</span>` },
     { key:'DESIGNATION',     label:'Designación',   render:(v)=>`<span class="td-em">${v||'—'}</span>` },
@@ -1417,8 +1436,10 @@ function buildCatF() {
     { key:'MAZ_SEL_cruzasBK',label:'MazSel BK',     render:(v)=>numOrDash(v) },
     { key:'MAZ_SEL_cruzasOP',label:'MazSel OP',     render:(v)=>numOrDash(v) },
     { key:'CornHarvM',       label:'CornHarvM',     render:(v)=>mkBar(v,maxHarv)},
+    { key:'CornHarvMoisture',label:'HarvMositure %',render:(v)=>mkBar(v,maxMoist) },
     { key:'ACAME_RAIZsn',    label:'ACAME_RAIZsn',  render:(v)=>v?`<span class="badge ${parseFloat(v)<=2?'badge-green':parseFloat(v)<=4?'badge-yellow':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>`},
     { key:'ACAME_TALLOsn',   label:'ACAME_TALLOsn', render:(v)=>v?`<span class="badge ${parseFloat(v)<=2?'badge-green':parseFloat(v)<=4?'badge-yellow':'badge-red'}">${v}</span>`:`<span class="empty-val">—</span>`},
+    { key:'FOTO_Maz',        label:'Foto Mazorca',  render:(v)=>fotoLink(v) },
   ];
   buildTable('tableF','pagF','tabsF', rows, cols);
   document.getElementById('nb-F').textContent = rows.length.toLocaleString();
