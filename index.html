@@ -1269,6 +1269,7 @@ function buildCatA() {
     { key:'EXPERIMENTO',     label:'Estudio',      render:(v)=>`<span class="td-mono" style="font-size:0.68rem">${v||'—'}</span>` },
     { key:'DESIGNATION',     label:'Designación',  render:(v)=>`<span class="td-em">${v||'—'}</span>` },
     { key:'PLOT_CODE',       label:'Plot',         render:(v)=>`<span class="badge badge-gray">${v|| '_'}</span>`},
+    { key:'GID',             label:'GID',          render:(v)=>v?`<span class="td-mono" style="color:var(--text2)">${v}</span>`:`<span class="empty-val">—</span>` },
     { key:'VCODE',           label:'VCODE',        render:(v)=>v?`<span class="badge badge-purple">${v}</span>`:`<span class="empty-val">—</span>` },
     { key:'RecParent',       label:'RecParent',    render:(v)=>v?`<span class="td-mono" style="font-size:0.7rem">${v}</span>`:`<span class="empty-val">—</span>` },
     { key:'DonnorParent',    label:'DonnorParent', render:(v)=>v?`<span class="td-mono" style="font-size:0.7rem">${v}</span>`:`<span class="empty-val">—</span>` },
